@@ -1,0 +1,7 @@
+{
+  "generator": "data/generate_dataset.py",
+  "rdkit_version": "2026.09.1",
+  "label_method": "RDKit Wildman-Crippen MolLogP",
+  "molecules": 576,
+  "labels_are_experimental": false
+}

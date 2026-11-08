@@ -10,7 +10,12 @@ from rdkit.Chem import Crippen
 
 from logp_screening.data import candidate_smiles, load_dataset
 from logp_screening.fingerprints import molecular_features, morgan_fingerprints
-from logp_screening.model import make_model, split_data, train_model
+from logp_screening.model import (
+    evaluate_scaffold_holdout,
+    make_model,
+    split_data,
+    train_model,
+)
 from logp_screening.screening import rank_candidates
 from logp_screening.utils import save_parity_plot
 
@@ -89,6 +94,27 @@ def test_model_and_five_fold_cv_exceed_metric_threshold() -> None:
     assert model.n_features_in_ == 2062
 
 
+def test_scaffold_holdout_keeps_scaffolds_separate_and_reports_metrics() -> None:
+    """Scaffold-aware evaluation runs across generated ring-system families."""
+    dataset_path = Path(__file__).resolve().parents[1] / "data" / "logp_toy.csv"
+    smiles, labels = load_dataset(dataset_path)
+    excluded = set(candidate_smiles())
+    indices = [i for i, value in enumerate(smiles) if value not in excluded]
+    result = evaluate_scaffold_holdout(
+        [smiles[i] for i in indices], labels[indices], seed=42
+    )
+    assert result.test_molecules > 0
+    assert result.test_scaffolds >= 1
+    assert np.isfinite([result.r2, result.mae]).all()
+
+
+def test_scaffold_holdout_rejects_too_few_scaffolds() -> None:
+    """A scaffold score is refused when a valid grouped split is impossible."""
+    smiles = ["C" * count for count in range(1, 11)]
+    with pytest.raises(ValueError, match="three distinct Murcko scaffolds"):
+        evaluate_scaffold_holdout(smiles, np.arange(10, dtype=float))
+
+
 def test_screening_ranks_highest_prediction_first_and_rejects_unfitted() -> None:
     """Candidates are returned in descending predicted logP order."""
     model = make_model()
@@ -129,5 +155,8 @@ def test_generated_dataset_contains_unique_molecules_and_rdkit_labels(tmp_path) 
     count = write_dataset(path)
     smiles, labels = load_dataset(path)
     assert count >= 100 and len(set(smiles)) == count
+    metadata = path.with_suffix(".metadata.json")
+    assert metadata.is_file()
+    assert '"labels_are_experimental": false' in metadata.read_text(encoding="utf-8")
     molecule = Chem.MolFromSmiles(smiles[0])
     assert labels[0] == pytest.approx(Crippen.MolLogP(molecule), abs=1e-7)

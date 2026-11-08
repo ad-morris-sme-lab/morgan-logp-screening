@@ -5,7 +5,7 @@ from pathlib import Path
 
 from logp_screening.data import candidate_smiles, load_dataset
 from logp_screening.fingerprints import molecular_features
-from logp_screening.model import split_data, train_model
+from logp_screening.model import evaluate_scaffold_holdout, split_data, train_model
 from logp_screening.screening import rank_candidates
 from logp_screening.utils import save_parity_plot
 
@@ -23,6 +23,7 @@ def main() -> None:
     training_smiles = [smiles[index] for index in training_indices]
     training_labels = labels[training_indices]
     model, metrics = train_model(training_smiles, training_labels, seed=42)
+    scaffold_metrics = evaluate_scaffold_holdout(training_smiles, training_labels, seed=42)
     features = molecular_features(training_smiles)
     _, X_test, _, y_test = split_data(features, training_labels, seed=42)
     y_pred = model.predict(X_test)
@@ -30,6 +31,12 @@ def main() -> None:
     print(f"Dataset molecules: {len(smiles)}")
     print(f"Test R²: {metrics.r2:.3f} | MAE: {metrics.mae:.3f} logP")
     print(f"5-fold train CV R²: {metrics.cv_r2_mean:.3f} ± {metrics.cv_r2_std:.3f}")
+    print(
+        "Murcko-scaffold holdout: "
+        f"R² {scaffold_metrics.r2:.3f} | MAE {scaffold_metrics.mae:.3f} logP "
+        f"({scaffold_metrics.test_molecules} molecules, "
+        f"{scaffold_metrics.test_scaffolds} scaffolds held out)"
+    )
     print("\nRanked candidates (higher predicted logP first)")
     print(f"{'Rank':>4}  {'Predicted logP':>14}  SMILES")
     for rank, (candidate, value) in enumerate(rank_candidates(model, candidates), start=1):
