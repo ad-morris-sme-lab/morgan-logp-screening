@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "morgan-logp-screening"
+version = "1.0.0"
+description = "Morgan-fingerprint regression and virtual screening for toy logP data"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

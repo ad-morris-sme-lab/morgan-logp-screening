@@ -1,0 +1,12 @@
+numpy==1.26.4; python_version < "3.14"
+numpy==2.5.4; python_version >= "3.14"
+scipy==1.15.3; python_version < "3.14"
+scipy==1.18.1; python_version >= "3.14"
+scikit-learn==1.6.1; python_version < "3.14"
+scikit-learn==1.9.1; python_version >= "3.14"
+matplotlib==3.10.3; python_version < "3.14"
+matplotlib==3.11.2; python_version >= "3.14"
+rdkit==2024.9.6; python_version < "3.14"
+rdkit==2026.9.1; python_version >= "3.14"
+pytest==9.2.0
+ruff==0.14.6
